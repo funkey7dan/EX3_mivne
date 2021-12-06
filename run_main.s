@@ -27,7 +27,7 @@ run_main:
         pushq -8(%rbp) # push the output of the scanf to the stack
         #second scanf for ps1
         movq $s,%rdi # put the string format into 1st argument
-        leaq -8(%rbp),%rsi #allocate bytes for scanf
+        leaq -256(%rbp),%rsi #allocate bytes for scanf
         subq  $8,%rsp #allign the stack before calling
         movq $0,%rax # we shall clear the value of the return register
         call   scanf #get the string
@@ -42,7 +42,7 @@ run_main:
         pushq -8(%rbp) # push the output of the scanf to the stack
         #second scanf for ps2
         movq $s,%rdi # put the string format into 1st argument
-        leaq -8(%rbp),%rsi #allocate bytes for scanf
+        leaq -256(%rbp),%rsi #allocate bytes for scanf
         subq  $8,%rsp #allign the stack before calling
         movq $0,%rax # we shall clear the value of the return register
         call   scanf #get the string
@@ -53,18 +53,14 @@ run_main:
         subq  $8,%rsp #allign the stack before calling
         movq $0,%rax # we shall clear the value of the return register
         call   scanf #get the string
-        pushq -8(%rbp) # push the output of the scanf to the stack
-        popq %rdi
-        popq %rsi
-        popq %rsi
-        popq %rdx
-        popq %rdx
+        #pushq -8(%rbp) # push the output of the scanf to the stack
+        movq -8(%rbp),%rdi
+        leaq -265(%rbp),%rsi
+        leaq -530(%rbp),%rdx
         call run_func
         # function finish
         addq $528,%rsp
         movq %rbp,%rsp
-        pop %r10
-        pop %r11
         popq %rbp
         ret
 
