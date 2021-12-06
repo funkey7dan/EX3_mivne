@@ -54,9 +54,9 @@ run_main:
         movq $0,%rax # we shall clear the value of the return register
         call   scanf #get the string
         #pushq -8(%rbp) # push the output of the scanf to the stack
-        movq -8(%rbp),%rdi
-        leaq -265(%rbp),%rsi
-        leaq -530(%rbp),%rdx
+        movq -8(%rbp),%rdi # put option into first argument
+        leaq -265(%rbp),%rdx # put the address of the frist struct into second argument
+        leaq -530(%rbp),%rsi # put the address of the second struct into third argument
         call run_func
         # function finish
         addq $528,%rsp
