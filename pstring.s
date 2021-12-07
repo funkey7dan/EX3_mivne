@@ -1,19 +1,19 @@
 
 .section .text
-.global CMAIN
 .global pstrlen
 .global swapCase
 .global replaceChar
 .global pstrijcmp
-CMAIN:
-    #write your code here
-    #xor rax, rax
-    ret
+.global pstrijcpy
+
 # char pstrlen(Pstring* pstr);
 pstrlen:
     ret
 # Pstring* replaceChar(Pstring* pstr, char oldChar, char newChar);
 replaceChar:
+    ret
+#Pstring* pstrijcpy(Pstring* dst, Pstring* src, char i, char j);
+pstrijcpy:
     ret
 #Pstring* swapCase(Pstring* pstr);
 swapCase:
