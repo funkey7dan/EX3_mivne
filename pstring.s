@@ -1,4 +1,3 @@
-
 .section .text
 .global pstrlen
 .global swapCase
@@ -8,6 +7,7 @@
 
 # char pstrlen(Pstring* pstr);
 pstrlen:
+    movq (%rdi,4),%rax
     ret
 # Pstring* replaceChar(Pstring* pstr, char oldChar, char newChar);
 replaceChar:

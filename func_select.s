@@ -3,10 +3,15 @@
 .align #8 Align address to multiple of 8
 .VALUES:
     .quad .L3 #Case 50 pstrlen
+    .quad .L8 #Case 51 fall through
     .quad .L4 #Case 52
     .quad .L5 #Case 53
     .quad .L6 #Case 54
     .quad .L7 #Case 55
+    .quad .L8 #Case 56 fall through
+    .quad .L8 #Case 57 fall through
+    .quad .L8 #Case 58 fall through
+    .quad .L8 #Case 58 fall through
     .quad .L3 #Case 60
     .quad .L8 # Default
 #scanf formats
@@ -40,12 +45,9 @@ run_func:
         #save registers
         pushq %r10
         pushq %r11
-        #save passed args
-        pushq %rdx #push pstr2 to stack
-        pushq %rsi #push pstr1 to stack
         movq %rsp, %rbp
         # swith case
-        subq $51,%rdi #check index
+        subq $50,%rdi #check index
         cmpq $10,%rdi #check if out of bounds
         ja .L8
         jmp *.VALUES(,%rdi,8)
@@ -56,16 +58,20 @@ run_func:
     movq %rax,%r10 # save the returned size of pstring1
     movq %rdx,%rdi # move the pointer to pstring2 from the 3rd arg to the 1st
     call pstrlen
-    movq %rax,%r10 # save the returned size of pstring2
-    subq $8,%rsp #allign the stack before calling
+    movq %rax,%r11 # save the returned size of pstring2
+    #print
+    subq $16,%rsp #allign the stack before calling
     movq $0,%rax # we shall clear the value of the return register
     movq $len_print,%rdi # put the format into 1st argument
-    movq %r10,%rsi #put the len of pstring1 to the 2nd arg
-    movq %r11,%rdx #put the len of pstring2 to the 3rd arg
+    leaq (%r10),%rsi #put the len of pstring1 to the 2nd arg
+    leaq (%r11),%rdx #put the len of pstring2 to the 3rd arg
     call printf
     jmp .END
 #Case 52 replace
 .L4:
+    #save passed args
+    pushq %rdx #push pstr2 to stack
+    pushq %rsi #push pstr1 to stack
     #first scanf
     movq $c,%rdi # put the format into 1st argument
     lea -1(%rbp),%rsi #allocate bytes for scanf
@@ -98,19 +104,22 @@ run_func:
     jmp .END
 #Case 53 copy
 .L5:
+        #save passed args
+        pushq %rdx #push pstr2 to stack
+        pushq %rsi #push pstr1 to stack
         #first scanf
         movq $c,%rdi # put the format into 1st argument
         lea -1(%rbp),%rsi #allocate bytes for scanf
         subq $16,%rsp #allign the stack before calling
         movq $0,%rax # we shall clear the value of the return register
-        call scanf #get the old char
+        call scanf #get the i index
         movb -1(%rbp),%dl #move the index i to 3rd arg
         #second scanf
         movq $c,%rdi # put the format into 1st argument
         lea -1(%rbp),%rsi #allocate bytes for scanf
         subq $16,%rsp #allign the stack before calling
         movq $0,%rax # we shall clear the value of the return register
-        call scanf #get the new char
+        call scanf #get the j index from usr
         movb -1(%rbp),%cl #move the j index to 4th arg
         #function
         popq %rsi #pop the second pstr to the second arg to call replaceChar
@@ -119,7 +128,7 @@ run_func:
         pushq %rax #save the returned pointer on stack
         #get len of pstr1
         call pstrlen #on the pstr1 which is in %rdi
-        movq %rsi,%rdx # move pstr1 to 3rd arg
+        popq %rdx # move pstr1 to 3rd arg
         movq %rax,%rsi # save the returned size of pstring1 in 2nd arg
         #printf the result
         movq $cpy_print,%rdi # move the format for printf to 1st arg
@@ -129,6 +138,9 @@ run_func:
         jmp .END
 #Case 54 swapCase
 .L6:
+    #save passed args
+    pushq %rdx #push pstr2 to stack
+    pushq %rsi #push pstr1 to stack
     #function
     popq %rdi # pop pstr1 to 1st arg
     call swapCase
@@ -162,6 +174,9 @@ run_func:
     jmp .END
 #Case 55 compare
 .L7:
+    #save passed args
+    pushq %rdx #push pstr2 to stack
+    pushq %rsi #push pstr1 to stack
     ## get input
     #first scanf
     movq $c,%rdi # put the format into 1st argument
@@ -177,7 +192,6 @@ run_func:
     movq $0,%rax # we shall clear the value of the return register
     call scanf #get the new char
     movb -1(%rbp),%cl #move the j index to 4th arg
-    jmp .END
     #function
     popq %rsi #pop the second pstr to the second arg to call replaceChar
     popq %rdi #pop the first pstr to the first arg to call function
@@ -200,8 +214,9 @@ run_func:
 .END:
         #function end
         movq %rbp,%rsp
+        popq %r11
+        popq %r10
         popq %rbp
-        subq  $8,%rsp
         ret
         
     
