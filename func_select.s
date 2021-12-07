@@ -41,10 +41,13 @@ cmpr_print:
 .type run_func, @function
 run_func:
         #function start
-        pushq %rbp
+
         #save registers
         pushq %r10
         pushq %r11
+        pushq %r12
+        pushq %r13
+        pushq %rbp
         movq %rsp, %rbp
         # swith case
         subq $50,%rdi #check index
@@ -67,40 +70,48 @@ run_func:
     leaq (%r11),%rdx #put the len of pstring2 to the 3rd arg
     call printf
     jmp .END
-#Case 52 replace
+#Case 52 replace chars
 .L4:
+    pushq %rbp
+    movq %rsp, %rbp
+    addq $-16,%rsp #get stack space
+
     #save passed args
-    pushq %rdx #push pstr2 to stack
-    pushq %rsi #push pstr1 to stack
+    movq %rdx,%r13 #save pstr2
+    movq %rsi,%r14 #save pstr1
+
     #first scanf
-    movq $c,%rdi # put the format into 1st argument
-    lea -1(%rbp),%rsi #allocate bytes for scanf
+    movq $s,%rdi # put the format into 1st argument
+    leaq -8(%rbp),%rsi #allocate bytes for scanf
     subq $16,%rsp #allign the stack before calling
     movq $0,%rax # we shall clear the value of the return register
     call scanf #get the old char
-    movb -1(%rbp),%sil #move the old char to 2nd arg
+    movzbq -8(%rbp),%r10 #move the old char to temp register to move to 2nd arg afterwards padded with zeros to prevent clutter
+
     #second scanf
-    movq $c,%rdi # put the format into 1st argument
-    lea -1(%rbp),%rsi #allocate bytes for scanf
+    #movq $c,%rdi # put the format into 1st argument
+    leaq -16(%rbp),%rsi #allocate bytes for scanf
     subq $16,%rsp #allign the stack before calling
     movq $0,%rax # we shall clear the value of the return register
     call scanf #get the new char
-    movb -1(%rbp),%dl #move the new char to 3rd arg
+    movzbq -16(%rbp),%rdx #move the new char to 3rd arg padded with zeros to prevent clutter
     # replace chars in both strings
-    popq %rdi #pop the first pstr to the first arg to call replaceChar
+    movq %r10,%rsi # put the old char to 2nd arg
+    movq %r13,%rdi #move the first pstr to the first arg to call replaceChar
     call replaceChar
-    popq %rdi #pop the second pstr to the first arg to call replaceChar
     pushq %rax # save the pointer returned from replace on stack
+    movq %r14,%rdi #pop the second pstr to the first arg to call replaceChar
     call replaceChar
     pushq %rax # save the pointer returned from replace on stack
     #print the result
     movq $rplc_print,%rdi # put the format into 1st argument
     subq  $16,%rsp #allign the stack before calling
-    movq  $0,%rax # we shall clear the value of the return register
     popq %r8 # put pstr2 to 5th argument
     popq %rcx # put pstr1 to 4th argument
     # 1st arg format 2nd old char 3rd new char 4th pstr1 5th pstr2
+    xor  %rax,%rax # we shall clear the value of the return register
     call  printf #print the string
+    popq %rbp
     jmp .END
 #Case 53 copy
 .L5:
