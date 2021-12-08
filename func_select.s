@@ -1,3 +1,5 @@
+#   ***REMOVED*** Daniel Bronfman
+
 .section .rodata
 
 .align #8 Align address to multiple of 8
@@ -147,8 +149,9 @@ run_func:
         pushq %r15
 
         #save passed args
-        movq %rdx,%r13 #save pstr2
         movq %rsi,%r12 #save pstr1
+        movq %rdx,%r13 #save pstr2
+
 
         #first scanf
         mov $d,%rdi # put the format into 1st argument
@@ -166,16 +169,21 @@ run_func:
 
         #check passed values
         cmpq %r15,%r14 #check if i greater than j
-        jg .INVALID
+        jg .INVALID_CPY
+        # we count indexes from zero, and length from 1, so we decrease the real length by 1 to get bounds
+        movq (%r12),%r8
+        movq (%r13),%r9
+        dec %r8
+        dec %r9
         # check if passed indices greater than length
-        cmpq (%r12),%r14
-        jg .INVALID
-        cmpq (%r12),%r15
-        jg .INVALID
-        cmpq (%r13),%r14
-        jg .INVALID
-        cmpq (%r13),%r15
-        jg .INVALID
+        cmpq %r8,%r14
+        jg .INVALID_CPY
+        cmpq %r8,%r15
+        jg .INVALID_CPY
+        cmpq %r9,%r14
+        jg .INVALID_CPY
+        cmpq %r9,%r15
+        jg .INVALID_CPY
 
         #function
         movq %r12,%rdi # move first string to 1st arg, as dest
@@ -259,7 +267,7 @@ run_func:
     #call pstrlen #on the old pstr2 which is in %rdi
     movq %r14,%rdx # move changed pstr2 to 3rd arg
     #movq %rax,%rsi # save the returned size of pstring1 in 2nd arg
-    movq (%r13,4),%rsi
+    movq (%r13),%rsi
 
     #printf the result
     movq $swp_print,%rdi # move the format for printf to 1st arg
@@ -306,18 +314,23 @@ run_func:
     call scanf #get j from user
     movzbq -17(%rbp),%r15 #save j to register
 
+    # we count indexes from zero, and length from 1, so we decrease the real length by 1 to get bounds
+    movq (%r12),%r8
+    movq (%r13),%r9
+    dec %r8
+    dec %r9
     #check passed values
     cmpq %r15,%r14 #check if i greater than j
-    jg .INVALID
+    jg .INVALID_CMP
     # check if passed indices greater than length
-    cmpq (%r12),%r14
-    jg .INVALID
-    cmpq (%r12),%r15
-    jg .INVALID
-    cmpq (%r13),%r14
-    jg .INVALID
-    cmpq (%r13),%r15
-    jg .INVALID
+    cmpq %r8,%r14
+    jg .INVALID_CMP
+    cmpq %r8,%r15
+    jg .INVALID_CMP
+    cmpq %r9,%r14
+    jg .INVALID_CMP
+    cmpq %r9,%r15
+    jg .INVALID_CMP
 
     #function
     movq %r12,%rdi # move first string to 1st arg, as dest
@@ -328,7 +341,7 @@ run_func:
     call pstrijcmp
     movq %rax,%rsi #save the returned value to second arg
 
-    #printf the changed string
+    #printf the compare result
     movq $cmpr_print,%rdi # move the format for printf to 1st arg
     movq  $0,%rax # we shall clear the value of the return register
     call  printf #print the string
@@ -342,6 +355,26 @@ run_func:
     movq %rbp,%rsp #restore stack
     popq %rbp
     jmp .END
+.INVALID_CMP:
+    movq $invalid_format,%rdi # put the format into 1st argument
+    #subq  $16,%rsp #allign the stack before calling
+    movq  $0,%rax # we shall clear the value of the return register
+    call   printf #get the string
+    movq $-2,%rsi #save the returned value to second arg
+    #printf the compare result
+    movq $cmpr_print,%rdi # move the format for printf to 1st arg
+    movq  $0,%rax # we shall clear the value of the return register
+    call  printf #print the string
+    # restore saved registers
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+
+    movq %rbp,%rsp #restore stack
+    popq %rbp
+    jmp .END
+
 
 # default case
 .L8:
@@ -351,20 +384,49 @@ run_func:
     call   printf #get the string
     jmp .END
 #invalid input
-.INVALID:
-    movq $invalid_format,%rdi # put the format into 1st argument
-        #subq  $16,%rsp #allign the stack before calling
-        movq  $0,%rax # we shall clear the value of the return register
-        call   printf #get the string
-        # restore saved registers
-        popq %r15
-        popq %r14
-        popq %r13
-        popq %r12
+.INVALID_CPY:
+    # pstr1 is in %r12 pstr2 is in %r13
 
-        movq %rbp,%rsp #restore stack
-        popq %rbp
-        jmp .END
+    #print invalid message
+    movq $invalid_format,%rdi # put the format into 1st argument
+    #subq  $16,%rsp #allign the stack before calling
+    movq  $0,%rax # we shall clear the value of the return register
+    call   printf #print the string
+
+    ## print len and string of both pstr
+    #get len of pstr1
+    movq %r12,%rdi
+    call pstrlen #on the pstr1 which is in %rdi
+    addq $8,%r12
+    movq %r12,%rdx # move pstr1 to 3rd arg
+    movq %rax,%rsi # save the returned size of pstring1 in 2nd arg
+
+    #printf the first string and len
+    movq $cpy_print,%rdi # move the format for printf to 1st arg
+    movq  $0,%rax # we shall clear the value of the return register
+    call  printf #print the string
+
+    #get len of pstr2
+    movq %r13,%rdi
+    addq $8,%r13
+    movq %r13,%rdx # move pstr2 to 3rd arg
+    call pstrlen #on the pstr2
+    movq %rax,%rsi # save the returned size of pstring1 in 2nd arg
+
+    #printf the result
+    movq $cpy_print,%rdi # move the format for printf to 1st arg
+    movq  $0,%rax # we shall clear the value of the return register
+    call  printf #print the string
+
+    # restore saved registers
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+
+    movq %rbp,%rsp #restore stack
+    popq %rbp
+    jmp .END
 
 .END:
         #function end

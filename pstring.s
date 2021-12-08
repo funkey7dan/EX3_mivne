@@ -1,3 +1,5 @@
+#   ***REMOVED*** Daniel Bronfman
+
 .section .text
 .global pstrlen
 .global swapCase
@@ -7,7 +9,7 @@
 
 # char pstrlen(Pstring* pstr);
 pstrlen:
-    movq (%rdi,4),%rax
+    movq (%rdi),%rax
     ret
 # Pstring* replaceChar(Pstring* pstr, char oldChar, char newChar);
 replaceChar:
@@ -129,7 +131,7 @@ pstrijcmp:
         xor %r11,%r11
         xor %r12,%r12
 
-        # set the counter
+        # set the counter for the difference between substrings
         movq $0,%r10
 
         #save string part of pstr1
@@ -140,25 +142,19 @@ pstrijcmp:
         addq $8,%r12
         #for loop
         .LOOP_CMPR:
-            movzbq (%r12,%rdx,1), %r8  # read src[i] into temp register
+            movzbq (%r11,%rdx,1), %r8  # read src[i] into temp register
             movzbq (%r12,%rdx,1), %r9 # read dest[i] into temp register
-            cmpq %r8,%r9 #compare values
+            cmpq %r9,%r8 #compare values
             je .L71 # if they are equal, go to incrementing index
-            jg .INCRS # if greater increase counter
-            jl .DCRS # if lesser decrease counter
-            .INCRS:
-            inc %r10 #increment counter and go to next index
-            jmp .L71
-            .DCRS:
-            dec %r10
-            jmp .L71
+            jg .G # if greater go to greater
+            jl .L # if lesser decrease counter
             .L71:
             addq $1,%rdx #increment the i index
             cmpq %rcx,%rdx #check if index i greater than j
             jle .LOOP_CMPR
         cmpq $0,%r10 #check the counter
         jl .L # if less than 0, set return to -1
-        movq $0,%r10
+        movq $0,%rax
         je .EXIT # if zero, return 0
         .G:
             movq $1,%rax
