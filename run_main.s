@@ -1,4 +1,4 @@
-#   ***REMOVED*** Daniel Bronfman
+#    Daniel Bronfman
 
 .section .rodata
 d:
